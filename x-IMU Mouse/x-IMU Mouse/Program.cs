@@ -32,19 +32,21 @@ namespace x_IMU_Mouse
             {
                 while (true)
                 {
+                    // Connect to x-IMU
                     Console.WriteLine("Searching for x-IMU...");
-                    x_IMU_API.PortScanner portScanner = new x_IMU_API.PortScanner(true, true);
-                    x_IMU_API.PortAssignment[] portAssignment = portScanner.Scan();
+                    x_IMU_API.PortAssignment[] portAssignment = (new x_IMU_API.PortScanner(true, true)).Scan();
                     x_IMU_API.xIMUserial xIMUserial = new x_IMU_API.xIMUserial(portAssignment[0].PortName);
                     xIMUserial.QuaternionDataReceived += new x_IMU_API.xIMUserial.onQuaternionDataReceived(xIMUserial_QuaternionDataReceived);
                     xIMUserial.DigitalIODataReceived += new x_IMU_API.xIMUserial.onDigitalIODataReceived(xIMUserial_DigitalIODataReceived);
                     xIMUserial.Open();
                     Console.WriteLine("Connected to x-IMU " + portAssignment[0].DeviceID + " on " + portAssignment[0].PortName + ".");
-                    Console.WriteLine("Press Esc to exit or any other key to send 'Initialise then tare' command.");
+
+                    // Poll for key press and detect if connection lost
+                    Console.WriteLine("Press Esc to exit or any other key to set cursor centre orientation (i.e. tare).");
                     int prevCount;
                     do
                     {
-                        prevCount = xIMUserial.PacketCounter.TotalPacketsRead;
+                        prevCount = xIMUserial.PacketsReadCounter.TotalPackets;
                         Thread.Sleep(1000);
                         if (Console.KeyAvailable == true)
                         {
@@ -52,16 +54,16 @@ namespace x_IMU_Mouse
                             {
                                 return;
                             }
-                            xIMUserial.SendCommandPacket(x_IMU_API.CommandCodes.AlgorithmInitialiseThenTare);
+                            xIMUserial.SendCommandPacket(x_IMU_API.CommandCodes.AlgorithmTare);
                         }
-                    } while (prevCount != xIMUserial.PacketCounter.TotalPacketsRead);
+                    } while (prevCount != xIMUserial.PacketsReadCounter.TotalPackets);
                     Console.WriteLine("No data received from x-IMU.  Closing port.");
                     xIMUserial.Close();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Error: " + ex.Message);
             }
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
@@ -77,12 +79,12 @@ namespace x_IMU_Mouse
         /// </remarks>
         static void xIMUserial_QuaternionDataReceived(object sender, x_IMU_API.QuaternionData e)
         {
-            if (((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead > sampledCount + 32)
+            if (((x_IMU_API.xIMUserial)sender).PacketsReadCounter.QuaternionDataPackets > sampledCount + 32)
             {
                 float[] euler = e.ConvertToEulerAngles();
                 SendInputClass.MouseEvent((int)(SendInputClass.MOUSEEVENTF.ABSOLUTE | SendInputClass.MOUSEEVENTF.MOVE),
-                                          (int)(32768.5f + ((-euler[2] / 30) * 32768.5f)),
-                                          (int)(32768.5f + ((-euler[1] / 20) * 32768.5f)),
+                                          (int)(32768.5f + ((euler[2] / 30) * 32768.5f)),
+                                          (int)(32768.5f + ((euler[1] / 20) * 32768.5f)),
                                           0);
             }
         }
@@ -100,7 +102,7 @@ namespace x_IMU_Mouse
                 if (e.State.AX1)
                 {
                     SendInputClass.MouseEvent((int)SendInputClass.MOUSEEVENTF.LEFTDOWN, 0, 0, 0);
-                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead;
+                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketsReadCounter.QuaternionDataPackets;
                 }
                 else
                 {
@@ -112,7 +114,7 @@ namespace x_IMU_Mouse
                 if (e.State.AX0)
                 {
                     SendInputClass.MouseEvent((int)SendInputClass.MOUSEEVENTF.RIGHTDOWN, 0, 0, 0);
-                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead;
+                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketsReadCounter.QuaternionDataPackets;
                 }
                 else
                 {
