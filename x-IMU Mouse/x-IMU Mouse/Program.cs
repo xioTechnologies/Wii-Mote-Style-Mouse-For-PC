@@ -83,8 +83,8 @@ namespace x_IMU_Mouse
             {
                 float[] euler = e.ConvertToEulerAngles();
                 SendInputClass.MouseEvent((int)(SendInputClass.MOUSEEVENTF.ABSOLUTE | SendInputClass.MOUSEEVENTF.MOVE),
-                                          (int)(32768.5f + ((euler[2] / 30) * 32768.5f)),
-                                          (int)(32768.5f + ((euler[1] / 20) * 32768.5f)),
+                                          (int)(32768.5f + ((-euler[2] / 30) * 32768.5f)),
+                                          (int)(32768.5f + ((-euler[1] / 20) * 32768.5f)),
                                           0);
             }
         }
