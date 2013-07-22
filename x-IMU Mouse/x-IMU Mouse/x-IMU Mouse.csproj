@@ -39,8 +39,8 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="xIMU_API">
-      <HintPath>xIMU_API\xIMU_API.dll</HintPath>
+    <Reference Include="x-IMU API">
+      <HintPath>x-IMU API\x-IMU API.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

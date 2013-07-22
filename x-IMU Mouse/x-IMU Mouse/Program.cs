@@ -12,7 +12,7 @@ namespace x_IMU_Mouse
         /// <summary>
         /// Previous state of digital ports used to interpret mouse button behaviour.
         /// </summary>
-        static xIMU_API.DigitalPortBits prevState = new xIMU_API.DigitalPortBits();
+        static x_IMU_API.DigitalPortBits prevState = new x_IMU_API.DigitalPortBits();
 
         /// <summary>
         /// Sampled packet count used to briefly disable cursor position updates after button down.
@@ -27,17 +27,17 @@ namespace x_IMU_Mouse
         /// </param>
         static void Main(string[] args)
         {
-            Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " " + Assembly.GetExecutingAssembly().GetName().Version);
+            Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Name + " " + Assembly.GetExecutingAssembly().GetName().Version.Major.ToString() + "." + Assembly.GetExecutingAssembly().GetName().Version.Minor.ToString());
             try
             {
                 while (true)
                 {
                     Console.WriteLine("Searching for x-IMU...");
-                    xIMU_API.PortScanner portScanner = new xIMU_API.PortScanner(true, true);
-                    xIMU_API.PortAssignment[] portAssignment = portScanner.Scan();
-                    xIMU_API.xIMUserial xIMUserial = new xIMU_API.xIMUserial(portAssignment[0].PortName);
-                    xIMUserial.QuaternionDataReceived += new xIMU_API.xIMUserial.onQuaternionDataReceived(xIMUserial_QuaternionDataReceived);
-                    xIMUserial.DigitalIODataReceived += new xIMU_API.xIMUserial.onDigitalIODataReceived(xIMUserial_DigitalIODataReceived);
+                    x_IMU_API.PortScanner portScanner = new x_IMU_API.PortScanner(true, true);
+                    x_IMU_API.PortAssignment[] portAssignment = portScanner.Scan();
+                    x_IMU_API.xIMUserial xIMUserial = new x_IMU_API.xIMUserial(portAssignment[0].PortName);
+                    xIMUserial.QuaternionDataReceived += new x_IMU_API.xIMUserial.onQuaternionDataReceived(xIMUserial_QuaternionDataReceived);
+                    xIMUserial.DigitalIODataReceived += new x_IMU_API.xIMUserial.onDigitalIODataReceived(xIMUserial_DigitalIODataReceived);
                     xIMUserial.Open();
                     Console.WriteLine("Connected to x-IMU " + portAssignment[0].DeviceID + " on " + portAssignment[0].PortName + ".");
                     Console.WriteLine("Press Esc to exit or any other key to send 'Initialise then tare' command.");
@@ -52,7 +52,7 @@ namespace x_IMU_Mouse
                             {
                                 return;
                             }
-                            xIMUserial.SendCommandPacket(xIMU_API.CommandCodes.AlgorithmInitThenTare);
+                            xIMUserial.SendCommandPacket(x_IMU_API.CommandCodes.AlgorithmInitialiseThenTare);
                         }
                     } while (prevCount != xIMUserial.PacketCounter.TotalPacketsRead);
                     Console.WriteLine("No data received from x-IMU.  Closing port.");
@@ -75,9 +75,9 @@ namespace x_IMU_Mouse
         /// Cursor horizontal position over screen width is represented by ±30 degrees range of psi.
         /// Cursor vertical position over screen height is represented by ±20 degrees range of theta.
         /// </remarks>
-        static void xIMUserial_QuaternionDataReceived(object sender, xIMU_API.QuaternionData e)
+        static void xIMUserial_QuaternionDataReceived(object sender, x_IMU_API.QuaternionData e)
         {
-            if (((xIMU_API.xIMUserial)sender).PacketCounter.QuaternionDataPacketsRead > sampledCount + 32)
+            if (((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead > sampledCount + 32)
             {
                 float[] euler = e.ConvertToEulerAngles();
                 SendInputClass.MouseEvent((int)(SendInputClass.MOUSEEVENTF.ABSOLUTE | SendInputClass.MOUSEEVENTF.MOVE),
@@ -93,14 +93,14 @@ namespace x_IMU_Mouse
         /// <remarks>
         /// Sets sampledCount to briefly disable cursor position updates after button down.
         /// </remarks>
-        static void xIMUserial_DigitalIODataReceived(object sender, xIMU_API.DigitalIOdata e)
+        static void xIMUserial_DigitalIODataReceived(object sender, x_IMU_API.DigitalIOdata e)
         {
             if (prevState.AX1 ^ e.State.AX1)    // if left button state changed
             {
                 if (e.State.AX1)
                 {
                     SendInputClass.MouseEvent((int)SendInputClass.MOUSEEVENTF.LEFTDOWN, 0, 0, 0);
-                    sampledCount = ((xIMU_API.xIMUserial)sender).PacketCounter.QuaternionDataPacketsRead;
+                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead;
                 }
                 else
                 {
@@ -112,7 +112,7 @@ namespace x_IMU_Mouse
                 if (e.State.AX0)
                 {
                     SendInputClass.MouseEvent((int)SendInputClass.MOUSEEVENTF.RIGHTDOWN, 0, 0, 0);
-                    sampledCount = ((xIMU_API.xIMUserial)sender).PacketCounter.QuaternionDataPacketsRead;
+                    sampledCount = ((x_IMU_API.xIMUserial)sender).PacketCounter.QuaternionPacketsRead;
                 }
                 else
                 {
